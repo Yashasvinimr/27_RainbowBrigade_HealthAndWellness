@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oral Health Image Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Oral Health Image Classifier</h1>
+        <p>Upload an image to classify the oral health condition</p>
+        
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" name="file" id="file" required>
+            <button type="submit" id="upload-btn">Upload</button>
+        </form>
+        
+        <div id="result" class="result" style="display: none;">
+            <p id="class-name"></p>
+            <p id="confidence"></p>
+            <p id="anemia-warning" style="color: red;"></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const resultDiv = document.getElementById('result');
+        const className = document.getElementById('class-name');
+        const confidence = document.getElementById('confidence');
+        const anemiaWarning = document.getElementById('anemia-warning');
+        
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                } else {
+                    className.textContent = `Predicted Class: ${data.predicted_class}`;
+                    confidence.textContent = `Confidence: ${data.confidence}`;
+                    resultDiv.style.display = 'block';
+                    
+                    // Display anemia warning based on predicted class
+                    if (data.predicted_class === 'Gingivitis' || data.predicted_class === 'Mouth Ulcer') {
+                        anemiaWarning.textContent = "Warning: The person might be suffering from anemia. Please consult a doctor.";
+                    } else {
+                        anemiaWarning.textContent = "";  // No warning if condition is healthy
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">An error occurred: ${error}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
